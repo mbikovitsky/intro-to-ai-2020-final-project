@@ -8,6 +8,9 @@ verify_ssl = true
 [packages]
 jupyter = "*"
 scipy = "*"
+numpy = "*"
+pandas = "*"
+joblib = "*"
 scikit-learn = "*"
 scikit-bio = "*"
 
