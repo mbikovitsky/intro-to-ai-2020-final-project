@@ -3,11 +3,11 @@
 
 import argparse
 import sys
+from collections import Counter
 from typing import Dict
 
 import pandas as pd
 from joblib import Parallel, delayed
-from skbio import Sequence
 
 
 def main():
@@ -37,7 +37,9 @@ def main():
 
 
 def kmercount(sequence: str, k: int) -> Dict[str, int]:
-    return Sequence(sequence).kmer_frequencies(k)
+    if k < 1:
+        raise ValueError("k must be at least 1")
+    return Counter(sequence[index:index + k] for index in range(len(sequence) - k + 1))
 
 
 def parse_command_line() -> argparse.Namespace:

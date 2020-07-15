@@ -1,0 +1,10 @@
+ipython==7.16.1
+notebook==6.0.3
+scipy==1.5.1
+numpy==1.19.0
+pandas==1.0.5
+joblib==0.16.0
+scikit-learn==0.23.1
+
+-f https://download.pytorch.org/whl/torch_stable.html
+torch==1.5.1+cpu
