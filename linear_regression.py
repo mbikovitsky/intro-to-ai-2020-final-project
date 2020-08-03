@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.7
 # -*- coding: utf-8 -*-
 
-from typing import NamedTuple, List
+from typing import List, NamedTuple
 
 import numpy as np
 import pandas as pd

@@ -14,23 +14,44 @@ class Net(nn.Module):
     Neural network for RNA degradation prediction.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        stage1_conv_channels: int = 96,
+        stage1_conv_kernel_size: int = 12,
+        stage2_conv_kernel_size: int = 5,
+        stage3_pool_kernel_size: int = 10,
+        stage4_conv_channels: int = 196,
+    ):
         super().__init__()
 
-        self.stage1 = create_conv_layer(4, 96, 12)
-        self.stage2 = ResidualLayer(96, 5)
-        self.stage3 = nn.AvgPool1d(10)
-        self.stage4 = create_conv_layer(96, 196, 9)
-        self.stage5 = nn.Linear(196, 1)
+        # The input to stage 3 has the same length as the output of stage 1 (see
+        # illustration in the paper). That length is a result of the convolution,
+        # which is performed without padding.
+        stage3_pool_in_length = 110 - stage1_conv_kernel_size + 1
+
+        # Calculate stage 3's output length according to:
+        # https://pytorch.org/docs/stable/generated/torch.nn.AvgPool1d.html
+        stage3_pool_out_length = int(
+            (stage3_pool_in_length - stage3_pool_kernel_size) / stage3_pool_kernel_size
+            + 1
+        )
+
+        self.stage1 = create_conv_layer(
+            4, stage1_conv_channels, stage1_conv_kernel_size
+        )
+        self.stage2 = ResidualLayer(stage1_conv_channels, stage2_conv_kernel_size)
+        self.stage3 = nn.AvgPool1d(stage3_pool_kernel_size)
+        self.stage4 = create_conv_layer(
+            stage1_conv_channels, stage4_conv_channels, stage3_pool_out_length
+        )
+        self.stage5 = nn.Linear(stage4_conv_channels, 1)
 
     def forward(self, x):
         x = self.stage1(x)
         x = self.stage2(x)
         x = self.stage3(x)
         x = self.stage4(x)
-
-        x = x.view(-1, 196)
-        x = self.stage5(x)
+        x = self.stage5(torch.flatten(x, start_dim=1))
 
         return x
 
