@@ -2,10 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import re
-from typing import Union, Tuple, Optional
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
 
 
 def occurrences(string: Union[str, pd.Series, pd.Index], sub: str) -> np.ndarray:
@@ -54,3 +57,40 @@ def mse(
     :return: The mean squared error.
     """
     return ((a - b) ** 2).mean(axis=axis)
+
+
+def train_network(
+    network: nn.Module,
+    data_loader: DataLoader,
+    epochs: int,
+    criterion: nn.Module,
+    optimizer,
+    verbose: bool = True,
+):
+    network.train()
+
+    for epoch in range(epochs):
+        for sequences, rates in data_loader:
+            # zero the parameter gradients
+            optimizer.zero_grad()
+
+            # forward + backward + optimize
+            outputs = network(sequences)
+            loss = criterion(outputs, rates)
+            loss.backward()
+            optimizer.step()
+
+        if verbose:
+            print(f"Epoch {epoch + 1}")
+
+
+def test_network(network: nn.Module, data_loader: DataLoader) -> float:
+    network.eval()
+
+    with torch.no_grad():
+        errors = []
+        for sequences, rates in data_loader:
+            outputs = network(sequences)
+            errors.extend((outputs - rates) ** 2)
+
+    return np.mean(errors)

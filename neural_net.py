@@ -122,37 +122,3 @@ def conv1d_same_padding(kernel_size: int) -> int:
     # https://arxiv.org/abs/1603.07285
     assert kernel_size % 2 == 1
     return (kernel_size - 1) // 2
-
-
-def train_network(network: Net, data_loader: DataLoader, epochs: int):
-    network.train()
-
-    criterion = nn.MSELoss()
-    optimizer = torch.optim.SGD(network.parameters(), lr=0.001, momentum=0.9)
-
-    for epoch in range(epochs):
-        for sequences, rates in data_loader:
-            # zero the parameter gradients
-            optimizer.zero_grad()
-
-            # forward + backward + optimize
-            outputs = network(sequences)
-            loss = criterion(outputs, rates)
-            loss.backward()
-            optimizer.step()
-
-        print(f"Epoch {epoch + 1}")
-
-
-def test_network(network: Net, data_loader: DataLoader) -> float:
-    network.eval()
-
-    with torch.no_grad():
-        errors = []
-        for (sequences, rates) in data_loader:
-            outputs = network(sequences)
-            errors.extend((outputs - rates) ** 2)
-
-    mse = np.mean(errors)
-
-    return mse
