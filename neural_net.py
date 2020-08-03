@@ -1,12 +1,10 @@
 #!/usr/bin/env python3.7
 # -*- coding: utf-8 -*-
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim
-from torch.utils.data import DataLoader
 
 
 class Net(nn.Module):
@@ -54,6 +52,27 @@ class Net(nn.Module):
         x = self.stage5(torch.flatten(x, start_dim=1))
 
         return x
+
+
+class Net2(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.layers = nn.Sequential(
+            nn.Conv1d(3, 128, 8),
+            nn.ReLU(),
+            nn.MaxPool1d(4, stride=2),
+            nn.Conv1d(128, 128, 8),
+            nn.ReLU(),
+            nn.AvgPool1d(4, stride=2),
+            nn.Flatten(),
+            nn.Linear(2560, 32),
+            nn.ReLU(),
+            nn.Linear(32, 1),
+        )
+
+    def forward(self, x):
+        return self.layers(x)
 
 
 class ResidualLayer(nn.Module):
