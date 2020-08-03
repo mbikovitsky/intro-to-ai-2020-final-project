@@ -4,6 +4,7 @@
 import re
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 
 
@@ -188,3 +189,33 @@ def read_original_predictions(filename: str) -> Tuple[pd.DataFrame, float, float
     df.sort_index(inplace=True)
 
     return df, a_minus_clip, a_plus_clip
+
+
+def one_hot_encode_sequences(
+    sequences: pd.Series, drop_first: bool = False
+) -> np.ndarray:
+    """
+    One-hot encodes a series of genetic sequences.
+
+    :param sequences:  Sequences to encode.
+    :param drop_first: Whether to encode each nucleotide as 3 dummies, instead of 4.
+
+    :return: Array of shape Nx4xL, where N is the number of sequences and L
+             is the length of each sequence. If drop_first is True, the shape is Nx3xL.
+    """
+    # One-hot encode the sequences
+    sequences = sequences.str.split("", expand=True)
+    sequences.drop(columns=[sequences.columns[0], sequences.columns[-1]], inplace=True)
+    sequences = pd.get_dummies(sequences, sparse=True, drop_first=drop_first)
+
+    columns = 3 if drop_first else 4
+
+    # Convert to a tensor
+    sequences_tensor = sequences.to_numpy()
+    sequences_tensor = sequences_tensor.reshape(
+        -1, sequences_tensor.shape[1] // columns, columns
+    )
+    sequences_tensor = sequences_tensor.transpose(0, 2, 1)
+    sequences_tensor = sequences_tensor.astype(np.float32)
+
+    return sequences_tensor
