@@ -7,9 +7,10 @@ import torch.nn.functional as F
 import torch.optim
 
 
-class Net(nn.Module):
+class ResidualDegrade(nn.Module):
     """
-    Neural network for RNA degradation prediction.
+    Neural network for RNA degradation prediction, based on ResidualBind
+    (https://doi.org/10.1101/418459).
     """
 
     def __init__(
@@ -77,7 +78,7 @@ class Net2(nn.Module):
 
 class ResidualLayer(nn.Module):
     """
-    A residual layer, as defined in the paper.
+    A residual layer, as defined in the ResidualBind paper.
     """
 
     def __init__(self, in_channels: int, kernel_size: int):
@@ -120,7 +121,7 @@ def create_conv_layer(
     in_channels: int, out_channels: int, kernel_size: int
 ) -> nn.Module:
     """
-    Creates a convolution layer, as described in the paper.
+    Creates a convolution layer, as described in the ResidualBind paper.
     """
     return nn.Sequential(
         nn.Conv1d(in_channels, out_channels, kernel_size),

@@ -10,7 +10,7 @@ from sklearn.utils.validation import check_is_fitted
 from torch import from_numpy, nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from neural_net import Net
+from neural_net import ResidualDegrade
 from util import train_network
 
 
@@ -62,7 +62,7 @@ class NeuralNetEstimator(ABC, BaseEstimator, RegressorMixin):
         pass
 
 
-class PaperEstimator(NeuralNetEstimator):
+class ResidualDegradeEstimator(NeuralNetEstimator):
     def __init__(
         self,
         stage1_conv_channels: int = 96,
@@ -80,7 +80,7 @@ class PaperEstimator(NeuralNetEstimator):
         self.stage4_conv_channels = stage4_conv_channels
 
     def _create_network(self) -> nn.Module:
-        return Net(
+        return ResidualDegrade(
             stage1_conv_channels=self.stage1_conv_channels,
             stage1_conv_kernel_size=self.stage1_conv_kernel_size,
             stage2_conv_kernel_size=self.stage2_conv_kernel_size,

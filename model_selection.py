@@ -9,7 +9,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
 
-from neural_net_estimators import PaperEstimator
+from neural_net_estimators import ResidualDegradeEstimator
 from preprocessing import one_hot_encode_sequences, read_all_data
 
 
@@ -24,7 +24,7 @@ def randomized_search(
         "stage4_conv_channels": range(196, 201),
     }
     search = RandomizedSearchCV(
-        estimator=PaperEstimator(),
+        estimator=ResidualDegradeEstimator(),
         param_distributions=param_distributions,
         n_iter=iterations,
         scoring="neg_mean_squared_error",
@@ -67,7 +67,7 @@ def main():
     )
     print(f"Best params: {best_params}")
 
-    model = PaperEstimator(**best_params).fit(X_dev, y_dev, training_epochs=5)
+    model = ResidualDegradeEstimator(**best_params).fit(X_dev, y_dev, training_epochs=5)
     mse = mean_squared_error(y_true=y_eval, y_pred=model.predict(X_eval))
     print(f"Eval MSE: {mse}")
 
