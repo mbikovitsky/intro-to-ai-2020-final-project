@@ -3,6 +3,7 @@
 
 from abc import ABC, abstractmethod
 
+import numpy as np
 import torch
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils import check_X_y, check_array
@@ -67,8 +68,16 @@ class NeuralNetEstimator(ABC, BaseEstimator, RegressorMixin):
         X = check_array(X, ensure_2d=False, allow_nd=True)
         X = from_numpy(X)
 
+        dataset = TensorDataset(X)
+        data_loader = DeviceDataLoader(
+            self._device, dataset, batch_size=4, shuffle=False
+        )
+
+        predictions = []
         with torch.no_grad():
-            return self._network(X.to(self._device)).cpu().numpy().reshape(-1)
+            for (batch,) in data_loader:
+                predictions.append(self._network(batch).cpu().numpy().reshape(-1))
+        return np.concatenate(predictions)
 
     @abstractmethod
     def _create_network(self) -> nn.Module:
