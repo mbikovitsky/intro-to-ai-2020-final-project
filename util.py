@@ -21,14 +21,14 @@ def occurrences(string: Union[str, pd.Series, pd.Index], sub: str) -> np.ndarray
     return string.str.count(f"(?={re.escape(sub)})").to_numpy()
 
 
-def match_parens(string: str) -> np.ndarray:
+def match_parens(string: str, dtype=np.uint8) -> np.ndarray:
     """
     Returns a matrix of matching parentheses. For each pair of indices i, j
     in the input string, the cell (i, j) in the matrix will have a value of 1
     iff i and j contain a matching pair of parens.
     """
 
-    pairs_matrix = np.zeros((len(string), len(string)), dtype=np.uint8)
+    pairs_matrix = np.zeros((len(string), len(string)), dtype=dtype)
 
     stack = []
     for index, char in enumerate(string):
