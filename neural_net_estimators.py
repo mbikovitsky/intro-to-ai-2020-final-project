@@ -14,22 +14,35 @@ from neural_net import ConvDegrade, ResidualDegrade
 from util import train_network
 
 
+class DeviceDataLoader(DataLoader):
+    def __init__(self, device: torch.device, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._device = device
+
+    def __iter__(self):
+        for batch in super().__iter__():
+            yield tuple(element.to(self._device) for element in batch)
+
+
 class NeuralNetEstimator(ABC, BaseEstimator, RegressorMixin):
     @abstractmethod
     def __init__(self):
-        self.device = (
+        self._device = (
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
 
     def fit(self, X, y, training_epochs: int = 1) -> "NeuralNetEstimator":
         X, y = check_X_y(X, y, ensure_2d=False, allow_nd=True, y_numeric=True)
-        X = from_numpy(X).to(self.device)
-        y = from_numpy(y.reshape(-1, 1)).to(self.device)
+        X = from_numpy(X)
+        y = from_numpy(y.reshape(-1, 1))
 
-        network = self._create_network().to(self.device)
+        network = self._create_network().to(self._device)
 
         dataset = TensorDataset(X, y)
-        data_loader = DataLoader(dataset, batch_size=4, shuffle=True)
+        data_loader = DeviceDataLoader(
+            self._device, dataset, batch_size=4, shuffle=True
+        )
 
         criterion = nn.MSELoss()
         optimizer = torch.optim.Adam(network.parameters(), lr=0.001)
@@ -52,10 +65,10 @@ class NeuralNetEstimator(ABC, BaseEstimator, RegressorMixin):
         check_is_fitted(self, attributes="_network")
 
         X = check_array(X, ensure_2d=False, allow_nd=True)
-        X = from_numpy(X).to(self.device)
+        X = from_numpy(X)
 
         with torch.no_grad():
-            return self._network(X).cpu().numpy().reshape(-1)
+            return self._network(X.to(self._device)).cpu().numpy().reshape(-1)
 
     @abstractmethod
     def _create_network(self) -> nn.Module:
