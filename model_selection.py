@@ -9,7 +9,6 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
 
-from neural_net_estimators import ResidualDegradeEstimator
 from preprocessing import read_all_data
 
 
@@ -49,7 +48,7 @@ def main():
 
     print(f"Best params: {search.best_params_}")
 
-    model = ResidualDegradeEstimator(**search.best_params_).fit(
+    model = evaluation_module.get_estimator().set_params(**search.best_params_).fit(
         X_dev, y_dev, training_epochs=5
     )
     mse = mean_squared_error(y_true=y_eval, y_pred=model.predict(X_eval))
