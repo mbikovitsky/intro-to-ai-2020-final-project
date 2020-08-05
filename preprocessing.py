@@ -205,7 +205,7 @@ def one_hot_encode_sequences(
 
     :return: Array of shape Nx4xL, where N is the number of sequences and L
              is the length of each sequence. If drop_first is True, the shape is Nx3xL.
-             If flat = True, the shape is Nx(4XL) or Nx(3xL), i.e. 2-dimensional.
+             If flat = True, the shape is Nx(4xL) or Nx(3xL), i.e. 2-dimensional.
     """
     # One-hot encode the sequences
     sequences = sequences.str.split("", expand=True)
