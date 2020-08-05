@@ -41,7 +41,7 @@ def main():
         scoring="neg_mean_squared_error",
         n_jobs=args.jobs,
         pre_dispatch=args.jobs,
-        cv=3,
+        cv=args.folds,
         refit=False,
         verbose=10,
     )
@@ -80,6 +80,9 @@ def parse_command_line() -> argparse.Namespace:
     )
     parser.add_argument(
         "--jobs", type=int, default=1, help="Number of jobs to run in parallel."
+    )
+    parser.add_argument(
+        "--folds", type=int, default=3, help="Number of folds for cross-validation"
     )
 
     return parser.parse_args()
