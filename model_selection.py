@@ -29,6 +29,7 @@ def randomized_search(
         n_iter=iterations,
         scoring="neg_mean_squared_error",
         n_jobs=jobs,
+        pre_dispatch=jobs,
         cv=3,
         refit=False,
         verbose=10,
