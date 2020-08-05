@@ -55,7 +55,7 @@ class ResidualDegrade(nn.Module):
         return x
 
 
-class Net2(nn.Module):
+class ConvDegrade(nn.Module):
     def __init__(self):
         super().__init__()
 

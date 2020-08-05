@@ -10,7 +10,7 @@ from sklearn.utils.validation import check_is_fitted
 from torch import from_numpy, nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from neural_net import ResidualDegrade
+from neural_net import ConvDegrade, ResidualDegrade
 from util import train_network
 
 
@@ -87,3 +87,11 @@ class ResidualDegradeEstimator(NeuralNetEstimator):
             stage3_pool_kernel_size=self.stage3_pool_kernel_size,
             stage4_conv_channels=self.stage4_conv_channels,
         )
+
+
+class ConvDegradeEstimator(NeuralNetEstimator):
+    def __init__(self):
+        super().__init__()
+
+    def _create_network(self) -> nn.Module:
+        return ConvDegrade()
