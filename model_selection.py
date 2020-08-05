@@ -18,7 +18,7 @@ def randomized_search(
 ) -> Dict[str, int]:
     param_distributions = {
         "stage1_conv_channels": range(96, 101),
-        "stage1_conv_kernel_size": range(7, 18),
+        "stage1_conv_kernel_size": range(7, 10),
         "stage2_conv_kernel_size": range(3, 10, 2),
         "stage3_pool_kernel_size": range(8, 13),
         "stage4_conv_channels": range(196, 201),
