@@ -3,33 +3,19 @@
 
 import argparse
 import sys
-from typing import Callable, Mapping
+from importlib import import_module
 
 import numpy as np
-import pandas as pd
+from sklearn.base import BaseEstimator
 from sklearn.model_selection import cross_val_score
 
-from neural_net_estimators import (
-    ConvDegradeEstimator,
-    NeuralNetEstimator,
-    ResidualDegradeEstimator,
-)
-from preprocessing import one_hot_encode_sequences, read_all_data
-
-
-MODELS: Mapping[str, NeuralNetEstimator] = {
-    "residual": ResidualDegradeEstimator(),
-    "conv": ConvDegradeEstimator(),
-}
-
-DATA_PREPROCESSING: Mapping[str, Callable[[pd.DataFrame], np.ndarray]] = {
-    "residual": lambda df: one_hot_encode_sequences(df["sequence"]),
-    "conv": lambda df: one_hot_encode_sequences(df["sequence"], drop_first=True),
-}
+from preprocessing import read_all_data
 
 
 def main():
     args = parse_command_line()
+
+    evaluation_module = import_module(f"evaluation.{args.model}")
 
     df = read_all_data(
         args.ss_filename,
@@ -39,16 +25,18 @@ def main():
     )
     df.dropna(inplace=True)
 
-    X = DATA_PREPROCESSING[args.model](df)
+    X = evaluation_module.preprocess_data(df)
     if args.deg_model == "a+":
         y = df["log2_deg_rate_a_plus"].to_numpy(np.float32)
     else:
         y = df["log2_deg_rate_a_minus"].to_numpy(np.float32)
 
+    estimator: BaseEstimator = evaluation_module.get_estimator()
+
     scores = cross_val_score(
-        MODELS[args.model],
-        X,
-        y,
+        estimator=estimator.set_params(**evaluation_module.get_eval_params()),
+        X=X,
+        y=y,
         scoring="neg_mean_squared_error",
         cv=args.folds,
         n_jobs=args.jobs,
@@ -78,9 +66,7 @@ def parse_command_line() -> argparse.Namespace:
     parser.add_argument(
         "deg_model", choices=("a+", "a-"), help="Degradation model to evaluate."
     )
-    parser.add_argument(
-        "model", choices=MODELS.keys(), help="Prediction model to evaluate"
-    )
+    parser.add_argument("model", help="Prediction model to evaluate")
     parser.add_argument("--epochs", type=int, default=1, help="NN training epochs.")
     parser.add_argument(
         "--jobs", type=int, default=1, help="Number of jobs to run in parallel."

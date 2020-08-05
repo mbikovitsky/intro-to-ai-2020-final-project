@@ -25,5 +25,15 @@ def get_param_distributions() -> Dict[str, Sequence[Any]]:
     }
 
 
+def get_eval_params() -> Dict[str, Any]:
+    return {
+        "stage1_conv_channels": 97,
+        "stage1_conv_kernel_size": 7,
+        "stage2_conv_kernel_size": 3,
+        "stage3_pool_kernel_size": 8,
+        "stage4_conv_channels": 198,
+    }
+
+
 def preprocess_data(df: pd.DataFrame) -> np.ndarray:
     return one_hot_encode_sequences(df["sequence"])
