@@ -74,8 +74,9 @@ def read_sequence_ids(
     :param filename:       File to read from.
     :param sequence_slice: Slice of the sequence string to retain in the result.
 
-    :return: DataFrame with an index of RNA sequences, and a single column with a
-             sequence ID.
+    :return: DataFrame with the following columns:
+             - id: RNA sequence ID
+             - sequence: The sequence itself
     """
 
     sequence_ids = pd.read_table(
@@ -171,7 +172,7 @@ def read_original_predictions(filename: str) -> Tuple[pd.DataFrame, float, float
 
     :return: A tuple of:
              - A DataFrame with the predictions, with columns a_plus and a_minus,
-               and indexed by sequence ID.
+               and indexed by sequence ID. Sorted by ID.
              -
     """
     df = pd.read_table(
