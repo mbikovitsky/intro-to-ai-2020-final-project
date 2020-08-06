@@ -4,10 +4,16 @@
 import argparse
 import sys
 from importlib import import_module
+from types import ModuleType
 
 import numpy as np
+from sklearn.base import BaseEstimator
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import RandomizedSearchCV, train_test_split
+from sklearn.model_selection import (
+    RandomizedSearchCV,
+    cross_val_score,
+    train_test_split,
+)
 
 from preprocessing import read_all_data
 
@@ -31,6 +37,67 @@ def main():
     else:
         y = df["log2_deg_rate_a_minus"].to_numpy(np.float32)
 
+    args.func(args, X, y, evaluation_module)
+
+
+def parse_command_line() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+
+    parser.add_argument(
+        "--deg-model",
+        choices=("a+", "a-"),
+        required=True,
+        help="Degradation model to evaluate.",
+    )
+    parser.add_argument("--model", required=True, help="Prediction model to evaluate")
+    parser.add_argument(
+        "--ss-filename",
+        default="data/ss_out.txt",
+        help="File containing secondary structure information.",
+    )
+    parser.add_argument(
+        "--sequence-ids-filename",
+        default="data/3U_sequences_final.txt",
+        help="File containing sequence IDs.",
+    )
+    parser.add_argument(
+        "--a-plus-deg-rates-filename",
+        default="data/3U.models.3U.40A.seq1022_param.txt",
+        help="File containing A+ degradation rates.",
+    )
+    parser.add_argument(
+        "--a-minus-deg-rates-filename",
+        default="data/3U.models.3U.00A.seq1022_param.txt",
+        help="File containing A- degradation rates.",
+    )
+    parser.add_argument("--epochs", type=int, default=1, help="NN training epochs.")
+    parser.add_argument(
+        "--jobs", type=int, default=1, help="Number of jobs to run in parallel."
+    )
+    parser.add_argument(
+        "--folds", type=int, default=3, help="Number of folds for cross-validation"
+    )
+
+    subparsers = parser.add_subparsers(title="Sub-commands", required=True)
+
+    select_parser = subparsers.add_parser("select", help="Model selection")
+    select_parser.add_argument(
+        "--iterations", type=int, default=30, help="NN parameter combinations to test."
+    )
+
+    eval_parser = subparsers.add_parser("eval", help="Model evaluation")
+
+    select_parser.set_defaults(func=handle_model_selection)
+    eval_parser.set_defaults(func=handle_model_evaluation)
+
+    return parser.parse_args()
+
+
+def handle_model_selection(
+    args: argparse.Namespace, X, y, evaluation_module: ModuleType
+):
     X_dev, X_eval, y_dev, y_eval = train_test_split(X, y, train_size=0.9)
 
     search = RandomizedSearchCV(
@@ -48,43 +115,34 @@ def main():
 
     print(f"Best params: {search.best_params_}")
 
-    model = evaluation_module.get_estimator().set_params(**search.best_params_).fit(
-        X_dev, y_dev, training_epochs=5
+    model = (
+        evaluation_module.get_estimator()
+        .set_params(**search.best_params_)
+        .fit(X_dev, y_dev, training_epochs=5)
     )
     mse = mean_squared_error(y_true=y_eval, y_pred=model.predict(X_eval))
     print(f"Eval MSE: {mse}")
 
 
-def parse_command_line() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument(
-        "ss_filename", help="File containing secondary structure information."
-    )
-    parser.add_argument("sequence_ids_filename", help="File containing sequence IDs.")
-    parser.add_argument(
-        "a_plus_deg_rates_filename", help="File containing A+ degradation rates."
-    )
-    parser.add_argument(
-        "a_minus_deg_rates_filename", help="File containing A- degradation rates."
-    )
-    parser.add_argument(
-        "deg_model", choices=("a+", "a-"), help="Degradation model to evaluate."
-    )
-    parser.add_argument("model", help="Prediction model to evaluate")
-    parser.add_argument("--epochs", type=int, default=1, help="NN training epochs.")
-    parser.add_argument(
-        "--iterations", type=int, default=30, help="NN parameter combinations to test."
-    )
-    parser.add_argument(
-        "--jobs", type=int, default=1, help="Number of jobs to run in parallel."
-    )
-    parser.add_argument(
-        "--folds", type=int, default=3, help="Number of folds for cross-validation"
+def handle_model_evaluation(
+    args: argparse.Namespace, X, y, evaluation_module: ModuleType
+):
+    estimator: BaseEstimator = evaluation_module.get_estimator()
+
+    scores = cross_val_score(
+        estimator=estimator.set_params(**evaluation_module.get_eval_params()),
+        X=X,
+        y=y,
+        scoring="neg_mean_squared_error",
+        cv=args.folds,
+        n_jobs=args.jobs,
+        pre_dispatch=args.jobs,
+        verbose=10,
+        fit_params={"training_epochs": args.epochs},
     )
 
-    return parser.parse_args()
+    print(f"Scores: {scores}")
+    print(f"Mean score: {np.mean(scores)}")
 
 
 if __name__ == "__main__":
