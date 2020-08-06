@@ -43,22 +43,6 @@ def match_parens(string: str, dtype=np.uint8) -> np.ndarray:
     return pairs_matrix
 
 
-def mse(
-    a: np.ndarray, b: np.ndarray, axis: Optional[Union[int, Tuple[int, ...]]] = None
-) -> Union[np.ndarray, float]:
-    """
-    Calculates the MSE from the given arrays.
-
-    :param a:    First array.
-    :param b:    Second array.
-    :param axis: Axis the calculate the mean against. See numpy.mean for the description
-                 of this parameter.
-
-    :return: The mean squared error.
-    """
-    return ((a - b) ** 2).mean(axis=axis)
-
-
 def train_network(
     network: nn.Module,
     data_loader: DataLoader,
