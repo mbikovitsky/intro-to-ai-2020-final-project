@@ -6,6 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim
 
+from util import conv_1d_same_padding
+
 
 class ResidualDegrade(nn.Module):
     """
@@ -89,10 +91,7 @@ class SSDegrade(nn.Module):
         )
 
         self.combined_layers = nn.Sequential(
-            nn.Conv1d(1, 96, 7),
-            nn.ReLU(),
-            nn.Flatten(),
-            nn.Linear(958656, 1),
+            nn.Conv1d(1, 96, 7), nn.ReLU(), nn.Flatten(), nn.Linear(958656, 1),
         )
 
     def forward(self, x: torch.Tensor):
@@ -126,7 +125,7 @@ class ResidualLayer(nn.Module):
             in_channels,
             in_channels,
             kernel_size,
-            padding=conv1d_same_padding(kernel_size),
+            padding=conv_1d_same_padding(kernel_size),
         )
         self.norm1 = nn.BatchNorm1d(in_channels)
 
@@ -134,7 +133,7 @@ class ResidualLayer(nn.Module):
             in_channels,
             in_channels,
             kernel_size,
-            padding=conv1d_same_padding(kernel_size),
+            padding=conv_1d_same_padding(kernel_size),
         )
         self.norm2 = nn.BatchNorm1d(in_channels)
 
@@ -163,17 +162,3 @@ def create_conv_layer(
         nn.BatchNorm1d(out_channels),
         nn.ReLU(),
     )
-
-
-def conv1d_same_padding(kernel_size: int) -> int:
-    """
-    Calculates necessary padding for a 1D convolution layer, so that the output shape
-    becomes equal to the input shape. It is assumed the stride is 1.
-
-    :param kernel_size: Size of the convolution kernel. Must be an odd integer.
-
-    :return: Required padding.
-    """
-    # https://arxiv.org/abs/1603.07285
-    assert kernel_size % 2 == 1
-    return (kernel_size - 1) // 2

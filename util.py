@@ -67,6 +67,20 @@ def conv_1d_output_length(
     )[0]
 
 
+def conv_1d_same_padding(kernel_size: int) -> int:
+    """
+    Calculates necessary padding for a 1D convolution layer, so that the output shape
+    becomes equal to the input shape. It is assumed the stride is 1.
+
+    :param kernel_size: Size of the convolution kernel. Must be an odd integer.
+
+    :return: Required padding.
+    """
+    # https://arxiv.org/abs/1603.07285
+    assert kernel_size % 2 == 1
+    return (kernel_size - 1) // 2
+
+
 def conv_2d_output_length(
     height_in: int,
     width_in: int,
