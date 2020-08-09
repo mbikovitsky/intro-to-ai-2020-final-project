@@ -76,6 +76,85 @@ class ConvDegrade(nn.Module):
         return self.layers(x)
 
 
+class SSDegrade(nn.Module):
+    def __init__(
+        self,
+        sequence_length: int = 110,
+        sequence_conv_channels: int = 96,
+        sequence_conv_kernel_size: int = 12,
+        ss_conv_channels: int = 96,
+        ss_conv_kernel_size: int = 7,
+        ss_pool_kernel_size: int = 10,
+        combined_conv_channels: int = 96,
+        combined_conv_kernel_size: int = 7,
+    ):
+        super().__init__()
+
+        self.sequence_length = sequence_length
+
+        self.sequence_layers = nn.Sequential(
+            nn.Conv1d(4, sequence_conv_channels, sequence_conv_kernel_size), nn.ReLU()
+        )
+        sequence_layers_output_shape = (
+            sequence_conv_channels,
+            conv_1d_output_length(sequence_length, sequence_conv_kernel_size),
+        )
+
+        self.ss_layers = nn.Sequential(
+            nn.Conv2d(1, ss_conv_channels, ss_conv_kernel_size),
+            nn.ReLU(),
+            nn.MaxPool2d(ss_pool_kernel_size),
+        )
+        ss_conv_output_shape = (
+            ss_conv_channels,
+            *conv_2d_output_length(
+                sequence_length, sequence_length, ss_conv_kernel_size
+            ),
+        )
+        ss_layers_output_shape = (
+            ss_conv_output_shape[0],
+            *max_pool_2d_output_length(*ss_conv_output_shape[1:], ss_pool_kernel_size),
+        )
+
+        combined_input_shape = np.prod(sequence_layers_output_shape) + np.prod(
+            ss_layers_output_shape
+        )
+
+        combined_conv_output_shape = (
+            combined_conv_channels,
+            conv_1d_output_length(combined_input_shape, combined_conv_kernel_size),
+        )
+
+        self.combined_layers = nn.Sequential(
+            nn.Conv1d(1, combined_conv_channels, combined_conv_kernel_size),
+            nn.ReLU(),
+            nn.Flatten(),
+            nn.Linear(np.prod(combined_conv_output_shape), 1),
+        )
+
+    def forward(self, x: torch.Tensor):
+        sequences = (
+            x[:, : self.sequence_length * 4].view(x.shape[0], -1, 4).transpose(1, 2)
+        )
+
+        secondary_structures = x[:, self.sequence_length * 4 :].view(
+            -1, 1, self.sequence_length, self.sequence_length
+        )
+
+        sequence_features = self.sequence_layers(sequences)
+        ss_features = self.ss_layers(secondary_structures)
+
+        combined_features = torch.cat(
+            (sequence_features.flatten(start_dim=1), ss_features.flatten(start_dim=1),),
+            dim=1,
+        )
+        combined_features = combined_features.view(combined_features.shape[0], 1, -1)
+
+        result = self.combined_layers(combined_features)
+
+        return result
+
+
 class ResidualLayer(nn.Module):
     """
     A residual layer, as defined in the ResidualBind paper.
