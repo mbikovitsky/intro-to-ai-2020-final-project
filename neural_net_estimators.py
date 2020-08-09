@@ -120,36 +120,8 @@ class ConvDegradeEstimator(NeuralNetEstimator):
 
 
 class SSDegradeEstimator(NeuralNetEstimator):
-    def __init__(
-        self,
-        sequence_length: int = 110,
-        sequence_conv_channels: int = 96,
-        sequence_conv_kernel_size: int = 7,
-        ss_conv_channels: int = 96,
-        ss_conv_kernel_size: int = 7,
-        ss_pool_kernel_size: int = 10,
-        combined_conv_channels: int = 96,
-        combined_conv_kernel_size: int = 7,
-    ):
+    def __init__(self,):
         super().__init__()
 
-        self.sequence_length = sequence_length
-        self.sequence_conv_channels = sequence_conv_channels
-        self.sequence_conv_kernel_size = sequence_conv_kernel_size
-        self.ss_conv_channels = ss_conv_channels
-        self.ss_conv_kernel_size = ss_conv_kernel_size
-        self.ss_pool_kernel_size = ss_pool_kernel_size
-        self.combined_conv_channels = combined_conv_channels
-        self.combined_conv_kernel_size = combined_conv_kernel_size
-
     def _create_network(self) -> nn.Module:
-        return SSDegrade(
-            sequence_length=self.sequence_length,
-            sequence_conv_channels=self.sequence_conv_channels,
-            sequence_conv_kernel_size=self.sequence_conv_kernel_size,
-            ss_conv_channels=self.ss_conv_channels,
-            ss_conv_kernel_size=self.ss_conv_kernel_size,
-            ss_pool_kernel_size=self.ss_pool_kernel_size,
-            combined_conv_channels=self.combined_conv_channels,
-            combined_conv_kernel_size=self.combined_conv_kernel_size,
-        )
+        return SSDegrade()

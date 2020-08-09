@@ -17,15 +17,7 @@ def get_estimator() -> BaseEstimator:
 
 
 def get_param_distributions() -> Dict[str, Sequence[Any]]:
-    return {
-        "sequence_conv_channels": range(96, 101),
-        "sequence_conv_kernel_size": range(7, 10),
-        "ss_conv_channels": range(48, 192, 2),
-        "ss_conv_kernel_size": range(3, 11),
-        "ss_pool_kernel_size": range(8, 13),
-        "combined_conv_channels": range(48, 192, 2),
-        "combined_conv_kernel_size": range(3, 11),
-    }
+    return {}
 
 
 def get_eval_params() -> Dict[str, Any]:
