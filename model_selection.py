@@ -79,15 +79,37 @@ def parse_command_line() -> argparse.Namespace:
     parser.add_argument(
         "--folds", type=int, default=3, help="Number of folds for cross-validation"
     )
+    parser.add_argument(
+        "--dev-ratio",
+        type=float,
+        default=0.9,
+        help="Ratio of the total data to use for cross-validation. "
+        "A float in the range (0, 1). "
+        "For model evaluation, the range is (0, 1].",
+    )
+    parser.add_argument(
+        "--dev-seed",
+        type=int,
+        default=None,
+        help="Seed to use when randomly selecting data for use with CV",
+    )
 
     subparsers = parser.add_subparsers(title="Sub-commands", required=True)
 
-    select_parser = subparsers.add_parser("select", help="Model selection")
+    select_parser = subparsers.add_parser(
+        "select",
+        help="Model selection",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     select_parser.add_argument(
         "--iterations", type=int, default=30, help="NN parameter combinations to test."
     )
 
-    eval_parser = subparsers.add_parser("eval", help="Model evaluation")
+    eval_parser = subparsers.add_parser(
+        "eval",
+        help="Model evaluation",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
 
     select_parser.set_defaults(func=handle_model_selection)
     eval_parser.set_defaults(func=handle_model_evaluation)
@@ -98,7 +120,9 @@ def parse_command_line() -> argparse.Namespace:
 def handle_model_selection(
     args: argparse.Namespace, X, y, evaluation_module: ModuleType
 ):
-    X_dev, X_eval, y_dev, y_eval = train_test_split(X, y, train_size=0.9)
+    X_dev, X_eval, y_dev, y_eval = train_test_split(
+        X, y, train_size=args.dev_ratio, random_state=args.dev_seed
+    )
 
     search = RandomizedSearchCV(
         estimator=evaluation_module.get_estimator(),
@@ -127,10 +151,17 @@ def handle_model_selection(
 def handle_model_evaluation(
     args: argparse.Namespace, X, y, evaluation_module: ModuleType
 ):
-    estimator: BaseEstimator = evaluation_module.get_estimator()
+    if args.dev_ratio != 1:
+        X, _, y, _ = train_test_split(
+            X, y, train_size=args.dev_ratio, random_state=args.dev_seed
+        )
+
+    estimator: BaseEstimator = evaluation_module.get_estimator().set_params(
+        **evaluation_module.get_eval_params()
+    )
 
     scores = cross_val_score(
-        estimator=estimator.set_params(**evaluation_module.get_eval_params()),
+        estimator=estimator,
         X=X,
         y=y,
         scoring="neg_mean_squared_error",
