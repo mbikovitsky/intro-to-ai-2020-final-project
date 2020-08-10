@@ -11,11 +11,18 @@ from util import occurrences
 
 
 class Model(NamedTuple):
+    """
+    Represents an RNA degradation rate linear regression model.
+    """
+
     coefficients: np.ndarray
     intercept: np.float
     kmers: List[str]
 
     def predict(self, sequences: pd.Series) -> np.ndarray:
+        """
+        Predicts degradation rates for a series of RNA sequences.
+        """
         X = np.zeros((len(sequences), len(self.coefficients)), dtype=int)
 
         # Count the occurrences of each feature k-mer in each of the sequences
@@ -29,6 +36,9 @@ class Model(NamedTuple):
 
     @staticmethod
     def load(filename: str) -> "Model":
+        """
+        Loads a saved model from a .mat file.
+        """
         raw_model = loadmat(filename)
         kmers = [element[0][0] for element in raw_model["Krows"]]
 
