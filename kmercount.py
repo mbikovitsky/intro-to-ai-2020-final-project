@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 
+from util import find_unsigned_integer_dtype
+
 
 def main():
     args = parse_command_line()
@@ -93,33 +95,6 @@ def kmercount(sequence: str, k: int) -> Dict[str, int]:
     return Counter(
         sequence[index : index + k] for index in range(len(sequence) - k + 1)
     )
-
-
-def find_unsigned_integer_dtype(value: int) -> np.dtype:
-    """
-    Finds the least-sized unsigned numpy dtype that can hold a given value.
-    """
-    if value > 0xFFFFFFFFFFFFFFFF:
-        raise ValueError("Maximum value cannot be represented")
-
-    if value < 0:
-        raise ValueError("Maximum value must be unsigned")
-
-    if value == 0:
-        return np.uint8
-
-    required_bits = int(np.ceil(np.log2(value)))
-
-    dtypes = (
-        (8, np.uint8),
-        (16, np.uint16),
-        (32, np.uint32),
-        (64, np.uint64),
-    )
-
-    for dtype_bits, dtype in dtypes:
-        if required_bits <= dtype_bits:
-            return dtype
 
 
 def parse_command_line() -> argparse.Namespace:

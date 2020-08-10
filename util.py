@@ -1,5 +1,8 @@
 #!/usr/bin/env python3.7
 # -*- coding: utf-8 -*-
+"""
+Various utility functions.
+"""
 
 import re
 from typing import Optional, Tuple, Union
@@ -218,3 +221,30 @@ def train_network(
 
         if verbose:
             print(f"Epoch {epoch + 1}")
+
+
+def find_unsigned_integer_dtype(value: int) -> np.dtype:
+    """
+    Finds the least-sized unsigned numpy dtype that can hold a given value.
+    """
+    if value > 0xFFFFFFFFFFFFFFFF:
+        raise ValueError("Maximum value cannot be represented")
+
+    if value < 0:
+        raise ValueError("Maximum value must be unsigned")
+
+    if value == 0:
+        return np.uint8
+
+    required_bits = int(np.ceil(np.log2(value)))
+
+    dtypes = (
+        (8, np.uint8),
+        (16, np.uint16),
+        (32, np.uint32),
+        (64, np.uint64),
+    )
+
+    for dtype_bits, dtype in dtypes:
+        if required_bits <= dtype_bits:
+            return dtype
