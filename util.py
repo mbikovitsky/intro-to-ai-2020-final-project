@@ -219,15 +219,3 @@ def train_network(
 
         if verbose:
             print(f"Epoch {epoch + 1}")
-
-
-def test_network(network: nn.Module, data_loader: DataLoader) -> float:
-    network.eval()
-
-    with torch.no_grad():
-        errors = []
-        for sequences, rates in data_loader:
-            outputs = network(sequences)
-            errors.extend((outputs - rates) ** 2)
-
-    return np.mean(errors)
