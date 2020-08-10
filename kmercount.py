@@ -22,41 +22,72 @@ def main():
         converters={"sequence": lambda string: string.upper()},
     )
 
-    results: Sequence[Dict[str, int]] = Parallel(n_jobs=args.jobs, verbose=10)(
-        delayed(kmercount)(row["sequence"], args.k) for _, row in sequences.iterrows()
-    )
-
-    print("*** Merging results... ***", file=sys.stderr)
-
-    key_count = 0
-    key_columns = {}
-    max_count = 0
-    for result in results:
-        max_count = max(max_count, max(result.values()))
-        for key in result.keys():
-            if key not in key_columns:
-                key_columns[key] = key_count
-                key_count += 1
-
-    dtype = find_unsigned_integer_dtype(max_count)
-
-    matrix = np.zeros((sequences.shape[0], key_count), dtype=dtype)
-
-    for index, result in enumerate(results):
-        for kmer, count in result.items():
-            matrix[index, key_columns[kmer]] = count
-
-    df = pd.DataFrame(
-        data=matrix,
-        index=sequences["id"],
-        columns=sorted(key_columns.keys(), key=lambda key: key_columns[key]),
-    )
+    df = aggregate_kmercount(sequences, args.k, args.jobs, verbose=True)
 
     print("*** Saving data... ***", file=sys.stderr)
     df.to_csv(args.output, na_rep="0")
 
 
+def aggregate_kmercount(
+    sequences: pd.DataFrame, k: int, jobs: int = -1, verbose: bool = False
+) -> pd.DataFrame:
+    """
+    Counts the occurrences of each possible k-mer in a list of genetic sequence.
+
+    :param sequences: DataFrame with an 'id' column and a 'sequence' column.
+    :param k:         Length of k-mers to count.
+    :param jobs:      Number of parallel jobs
+    :param verbose:   Whether to output progress messages to stderr.
+
+    :return: DataFrame, indexed by sequence id, and with columns corresponding to
+             k-mers encountered. Each cell is the k-mer count.
+    """
+    results: Sequence[Dict[str, int]] = Parallel(
+        n_jobs=jobs, verbose=10 if verbose else 0
+    )(delayed(kmercount)(sequence, k) for sequence in sequences["sequence"])
+
+    if verbose:
+        print("*** Merging results... ***", file=sys.stderr)
+
+    total_kmers = 0  # Total number of unique kmers in the given sequences
+    kmer_columns = {}  # Column corresponding to each kmer
+    max_count = 0  # Maximum count of a some kmer in any of the sequences
+    for result in results:
+        max_count = max(max_count, max(result.values()))
+        for kmer in result.keys():
+            if kmer not in kmer_columns:
+                kmer_columns[kmer] = total_kmers
+                total_kmers += 1
+    assert total_kmers == len(kmer_columns)
+
+    dtype = find_unsigned_integer_dtype(max_count)
+
+    matrix = np.zeros((sequences.shape[0], total_kmers), dtype=dtype)
+
+    for index, result in enumerate(results):
+        for kmer, count in result.items():
+            matrix[index, kmer_columns[kmer]] = count
+
+    df = pd.DataFrame(
+        data=matrix,
+        index=sequences["id"],
+        columns=sorted(kmer_columns.keys(), key=lambda kmer: kmer_columns[kmer]),
+    )
+
+    return df
+
+
 def kmercount(sequence: str, k: int) -> Dict[str, int]:
+    """
+    Counts the occurrences of each possible k-mer in a genetic sequence.
+
+    Note that the function matches k-mers *case-sensitively*.
+
+    :param sequence: Sequence to count k-mers in.
+    :param k:        Length of k-mers to count.
+
+    :return: Dict mapping k-mer to its number of occurrences in the sequence.
+    """
     if k < 1:
         raise ValueError("k must be at least 1")
     return Counter(
@@ -64,17 +95,20 @@ def kmercount(sequence: str, k: int) -> Dict[str, int]:
     )
 
 
-def find_unsigned_integer_dtype(maximum_value: int) -> np.dtype:
-    if maximum_value > 0xFFFFFFFFFFFFFFFF:
+def find_unsigned_integer_dtype(value: int) -> np.dtype:
+    """
+    Finds the least-sized unsigned numpy dtype that can hold a given value.
+    """
+    if value > 0xFFFFFFFFFFFFFFFF:
         raise ValueError("Maximum value cannot be represented")
 
-    if maximum_value < 0:
+    if value < 0:
         raise ValueError("Maximum value must be unsigned")
 
-    if maximum_value == 0:
+    if value == 0:
         return np.uint8
 
-    required_bits = int(np.ceil(np.log2(maximum_value)))
+    required_bits = int(np.ceil(np.log2(value)))
 
     dtypes = (
         (8, np.uint8),
@@ -89,7 +123,9 @@ def find_unsigned_integer_dtype(maximum_value: int) -> np.dtype:
 
 
 def parse_command_line() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument("sequences", help="File containing the sequences to process")
     parser.add_argument("output", help="Output filename (CSV)")
     parser.add_argument("k", type=int, help="k-mer length")
