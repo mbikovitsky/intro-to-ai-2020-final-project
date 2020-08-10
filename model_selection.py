@@ -1,5 +1,11 @@
 #!/usr/bin/env python3.7
 # -*- coding: utf-8 -*-
+"""
+Script for CV-based model selection and evaluation.
+"""
+
+# See https://scikit-learn.org/stable/developers/develop.html
+# for more information on how this all fits together.
 
 import argparse
 import sys
@@ -51,7 +57,12 @@ def parse_command_line() -> argparse.Namespace:
         required=True,
         help="Degradation model to evaluate.",
     )
-    parser.add_argument("--model", required=True, help="Prediction model to evaluate")
+    parser.add_argument(
+        "--model",
+        required=True,
+        help="Prediction model to evaluate. See files in the 'evaluation' "
+        "directory for the model definitions.",
+    )
     parser.add_argument(
         "--ss-filename",
         default="data/ss_out.txt",
