@@ -192,6 +192,18 @@ def train_network(
     optimizer,
     verbose: bool = True,
 ):
+    """
+    Trains a PyTorch neural network.
+
+    :param network:     Instance of the network to train.
+    :param data_loader: PyTorch DataLoader that returns batches of network inputs and
+                        the corresponding correct outputs.
+    :param epochs:      Number of training epochs.
+    :param criterion:   Loss function to use. For instance, nn.MSELoss.
+    :param optimizer:   Optimizer to use for training. For instance, torch.optim.Adam.
+    :param verbose:     If True, prints a message to stdout each time a training epoch
+                        is completed.
+    """
     network.train()
 
     for epoch in range(epochs):
