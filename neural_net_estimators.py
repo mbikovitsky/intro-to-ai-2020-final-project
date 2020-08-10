@@ -1,5 +1,11 @@
 #!/usr/bin/env python3.7
 # -*- coding: utf-8 -*-
+"""
+sklearn estimators for PyTorch neural networks.
+"""
+
+# See https://scikit-learn.org/stable/developers/develop.html
+# for more information on how this all fits together.
 
 from abc import ABC, abstractmethod
 
@@ -16,6 +22,10 @@ from util import train_network
 
 
 class DeviceDataLoader(DataLoader):
+    """
+    DataLoader that sends its outputs to a device.
+    """
+
     def __init__(self, device: torch.device, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -27,6 +37,10 @@ class DeviceDataLoader(DataLoader):
 
 
 class NeuralNetEstimator(ABC, BaseEstimator, RegressorMixin):
+    """
+    Base class for neural net estimators.
+    """
+
     @abstractmethod
     def __init__(self):
         self._device = (
@@ -34,6 +48,17 @@ class NeuralNetEstimator(ABC, BaseEstimator, RegressorMixin):
         )
 
     def fit(self, X, y, training_epochs: int = 1) -> "NeuralNetEstimator":
+        """
+        Trains the neural network on the given data.
+
+        The training uses nn.MSELoss and torch.optim.Adam as the optimizer.
+
+        :param X:               Training data.
+        :param y:               Response vector.
+        :param training_epochs: Number of training epochs.
+
+        :return: self
+        """
         X, y = check_X_y(X, y, ensure_2d=False, allow_nd=True, y_numeric=True)
         X = from_numpy(X)
         y = from_numpy(y.reshape(-1, 1))
@@ -63,6 +88,13 @@ class NeuralNetEstimator(ABC, BaseEstimator, RegressorMixin):
         return self
 
     def predict(self, X):
+        """
+        Passes the given samples through the neural net and returns the predictions.
+
+        :param X: Samples to run a prediction on.
+
+        :return: Predictions matrix.
+        """
         check_is_fitted(self, attributes="_network")
 
         X = check_array(X, ensure_2d=False, allow_nd=True)
@@ -81,10 +113,18 @@ class NeuralNetEstimator(ABC, BaseEstimator, RegressorMixin):
 
     @abstractmethod
     def _create_network(self) -> nn.Module:
+        """
+        Must be overridden in derived classes. Returns an instance of the neural
+        network.
+        """
         pass
 
 
 class ResidualDegradeEstimator(NeuralNetEstimator):
+    """
+    Estimator for the ResidualDegrade network.
+    """
+
     def __init__(
         self,
         stage1_conv_channels: int = 96,
@@ -112,6 +152,10 @@ class ResidualDegradeEstimator(NeuralNetEstimator):
 
 
 class ConvDegradeEstimator(NeuralNetEstimator):
+    """
+    Estimator for the ConvDegrade network.
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -120,6 +164,10 @@ class ConvDegradeEstimator(NeuralNetEstimator):
 
 
 class SSDegradeEstimator(NeuralNetEstimator):
+    """
+    Estimator for the SSDegrade network.
+    """
+
     def __init__(self,):
         super().__init__()
 

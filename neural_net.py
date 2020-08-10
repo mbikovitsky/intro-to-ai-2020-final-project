@@ -1,5 +1,8 @@
 #!/usr/bin/env python3.7
 # -*- coding: utf-8 -*-
+"""
+Implementations of various neural networks for RNA degradation rate prediction.
+"""
 
 import torch
 import torch.nn as nn
@@ -58,6 +61,10 @@ class ResidualDegrade(nn.Module):
 
 
 class ConvDegrade(nn.Module):
+    """
+    A convolutional neural net using only the RNA sequence.
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -79,6 +86,10 @@ class ConvDegrade(nn.Module):
 
 
 class SSDegrade(nn.Module):
+    """
+    A convolutional neural net using both the RNA sequence and the secondary structure.
+    """
+
     def __init__(self):
         super().__init__()
 
