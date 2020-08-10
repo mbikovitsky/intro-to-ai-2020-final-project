@@ -1,5 +1,8 @@
 #!/usr/bin/env python3.7
 # -*- coding: utf-8 -*-
+"""
+Various utilities for preprocessing the project's data.
+"""
 
 import re
 from typing import Tuple
@@ -127,7 +130,13 @@ def read_all_data(
     :param sequence_ids_filename:      File containing sequence IDs.
     :param a_plus_deg_rates_filename:  File containing A+ degradation rates.
     :param a_minus_deg_rates_filename: File containing A- degradation rates.
-    :return:
+
+    :return: DataFrame with sequences and their corresponding secondary structures
+             and degradation rates. In essence, this merges the DataFrames returned by
+             read_secondary_structures and read_degradation_rates, indexed by
+             sequence ID (as returned by read_sequence_ids). The columns of
+             the degradation rates DataFrames are suffixed with
+             '_a_plus' and '_a_minus'.
     """
     df = read_secondary_structures(ss_filename)
 
@@ -166,14 +175,16 @@ def read_all_data(
 
 def read_original_predictions(filename: str) -> Tuple[pd.DataFrame, float, float]:
     """
-    Read the original degradation rate predictions.
+    Read the original degradation rate predictions (log2).
 
     :param filename: File to read.
 
     :return: A tuple of:
              - A DataFrame with the predictions, with columns a_plus and a_minus,
                and indexed by sequence ID. Sorted by ID.
-             -
+             - Clip value for A- predictions. If the linear model predicts a value
+               smaller than this (or NaN), it is reset to this value.
+             - Clip value for A+ predictions.
     """
     df = pd.read_table(
         filename,
