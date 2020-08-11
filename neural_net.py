@@ -98,7 +98,7 @@ class SSDegrade(nn.Module):
         )
 
         self.ss_layers = nn.Sequential(
-            nn.Conv2d(1, 8, 20), nn.ReLU(), nn.AvgPool2d(91), nn.Flatten(),
+            nn.Conv2d(1, 8, (20, 110)), nn.ReLU(), nn.AvgPool2d((91, 1)), nn.Flatten(),
         )
 
         self.combined_layers = nn.Sequential(
