@@ -15,11 +15,7 @@ from types import ModuleType
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import (
-    RandomizedSearchCV,
-    cross_val_score,
-    train_test_split,
-)
+from sklearn.model_selection import RandomizedSearchCV, cross_validate, train_test_split
 
 from preprocessing import read_all_data
 
@@ -171,11 +167,11 @@ def handle_model_evaluation(
         **evaluation_module.get_eval_params()
     )
 
-    scores = cross_val_score(
+    cv_results = cross_validate(
         estimator=estimator,
         X=X,
         y=y,
-        scoring="neg_mean_squared_error",
+        scoring=("neg_mean_squared_error", "r2"),
         cv=args.folds,
         n_jobs=args.jobs,
         pre_dispatch=args.jobs,
@@ -183,8 +179,11 @@ def handle_model_evaluation(
         fit_params={"training_epochs": args.epochs},
     )
 
-    print(f"Scores: {scores}")
-    print(f"Mean score: {np.mean(scores)}")
+    print(f"Neg MSE: {cv_results['test_neg_mean_squared_error']}")
+    print(f"R^2: {cv_results['test_r2']}")
+
+    print(f"Mean neg MSE: {np.mean(cv_results['test_neg_mean_squared_error'])}")
+    print(f"Mean R^2: {np.mean(cv_results['test_r2'])}")
 
 
 if __name__ == "__main__":
