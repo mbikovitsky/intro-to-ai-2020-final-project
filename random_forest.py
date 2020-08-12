@@ -36,23 +36,13 @@ model_a_minus = Model.load("data/run_linear_3U_00Am1_dg_BEST.out.mat")
 # 1264 features - a+
 #  718 features - a-
 
-
-# Split data to train and test.
-available_deg_rates_train, available_deg_rates_test = train_test_split(available_deg_rates, test_size=0.1)
-
-# Create kmer_cnt matrix to train and test data according to a_plus and a_minus linear regression models.
-kmer_cnt_matrix_a_plus_train = model_a_plus.kmer_cnt_matrix(available_deg_rates_train["sequence"])
-kmer_cnt_matrix_a_plus_test = model_a_plus.kmer_cnt_matrix(available_deg_rates_test["sequence"])
-
-kmer_cnt_matrix_a_minus_train = model_a_minus.kmer_cnt_matrix(available_deg_rates_train["sequence"])
-kmer_cnt_matrix_a_minus_test = model_a_minus.kmer_cnt_matrix(available_deg_rates_test["sequence"])
+# Create kmer_cnt matrix to the data according to a_plus and a_minus linear regression models.
+kmer_cnt_matrix_a_plus = model_a_plus.kmer_cnt_matrix(available_deg_rates["sequence"])
+kmer_cnt_matrix_a_minus = model_a_minus.kmer_cnt_matrix(available_deg_rates["sequence"])
 
 # Real deg rate values.
-deg_rate_a_plus_train = available_deg_rates.loc[available_deg_rates_train.index]["log2_deg_rate_a_plus"]
-deg_rate_a_plus_test = available_deg_rates.loc[available_deg_rates_test.index]["log2_deg_rate_a_plus"]
-deg_rate_a_minus_train = available_deg_rates.loc[available_deg_rates_train.index]["log2_deg_rate_a_minus"]
-deg_rate_a_minus_test = available_deg_rates.loc[available_deg_rates_test.index]["log2_deg_rate_a_minus"]
-
+deg_rate_a_plus = available_deg_rates.loc[available_deg_rates.index]["log2_deg_rate_a_plus"]
+deg_rate_a_minus = available_deg_rates.loc[available_deg_rates.index]["log2_deg_rate_a_minus"]
 
 # create a regressor objects:
 regressor_a_plus = RandomForestRegressor(n_estimators=80, random_state=None,
@@ -63,10 +53,10 @@ regressor_a_minus = RandomForestRegressor(n_estimators=80, random_state=None,
 
 scores_a_plus = cross_val_score(
     estimator=regressor_a_plus,
-    X=kmer_cnt_matrix_a_plus_train,
-    y=deg_rate_a_plus_train,
+    X=kmer_cnt_matrix_a_plus,
+    y=deg_rate_a_plus,
     scoring="neg_mean_squared_error",
-    cv=7,
+    cv=10,
     n_jobs=2,
     verbose=10,
 )
@@ -76,10 +66,10 @@ print(f"Mean score a plus: {np.mean(scores_a_plus)}")
 
 scores_a_minus = cross_val_score(
     estimator=regressor_a_minus,
-    X=kmer_cnt_matrix_a_minus_train,
-    y=deg_rate_a_minus_train,
+    X=kmer_cnt_matrix_a_minus,
+    y=deg_rate_a_minus,
     scoring="neg_mean_squared_error",
-    cv=7,
+    cv=10,
     n_jobs=2,
     verbose=10,
 )
@@ -89,6 +79,30 @@ print(f"Mean score a minus: {np.mean(scores_a_minus)}")
 
 
 ### CODE WITHOUT CROSS VALIDATION ###
+
+# # Split data to train and test.
+# available_deg_rates_train, available_deg_rates_test = train_test_split(available_deg_rates, test_size=0.1)
+#
+# # Create kmer_cnt matrix to train and test data according to a_plus and a_minus linear regression models.
+# kmer_cnt_matrix_a_plus_train = model_a_plus.kmer_cnt_matrix(available_deg_rates_train["sequence"])
+# kmer_cnt_matrix_a_plus_test = model_a_plus.kmer_cnt_matrix(available_deg_rates_test["sequence"])
+#
+# kmer_cnt_matrix_a_minus_train = model_a_minus.kmer_cnt_matrix(available_deg_rates_train["sequence"])
+# kmer_cnt_matrix_a_minus_test = model_a_minus.kmer_cnt_matrix(available_deg_rates_test["sequence"])
+#
+# # Real deg rate values.
+# deg_rate_a_plus_train = available_deg_rates.loc[available_deg_rates_train.index]["log2_deg_rate_a_plus"]
+# deg_rate_a_plus_test = available_deg_rates.loc[available_deg_rates_test.index]["log2_deg_rate_a_plus"]
+# deg_rate_a_minus_train = available_deg_rates.loc[available_deg_rates_train.index]["log2_deg_rate_a_minus"]
+# deg_rate_a_minus_test = available_deg_rates.loc[available_deg_rates_test.index]["log2_deg_rate_a_minus"]
+#
+#
+# # create a regressor objects:
+# regressor_a_plus = RandomForestRegressor(n_estimators=80, random_state=None,
+#                                          bootstrap=True, max_depth=60, min_samples_leaf=15)
+#
+# regressor_a_minus = RandomForestRegressor(n_estimators=80, random_state=None,
+#                                           bootstrap=True, max_depth=60, min_samples_leaf=15)
 
 # # fit the regressors:
 # regressor_a_plus.fit(kmer_cnt_matrix_a_plus_train, deg_rate_a_plus_train)
