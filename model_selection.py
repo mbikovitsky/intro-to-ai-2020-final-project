@@ -79,7 +79,7 @@ def parse_command_line() -> argparse.Namespace:
         default="data/3U.models.3U.00A.seq1022_param.txt",
         help="File containing A- degradation rates.",
     )
-    parser.add_argument("--epochs", type=int, default=1, help="NN training epochs.")
+    parser.add_argument("--epochs", type=int, help="NN training epochs.")
     parser.add_argument(
         "--jobs",
         type=int,
@@ -113,7 +113,12 @@ def parse_command_line() -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     select_parser.add_argument(
-        "--iterations", type=int, default=30, help="NN parameter combinations to test."
+        "--iterations", type=int, default=30, help="Parameter combinations to test."
+    )
+    select_parser.add_argument(
+        "--eval-epochs",
+        type=int,
+        help="NN training epochs for the final validation step.",
     )
 
     eval_parser = subparsers.add_parser(
@@ -146,15 +151,20 @@ def handle_model_selection(
         refit=False,
         verbose=10,
     )
-    search.fit(X_dev, y_dev, training_epochs=args.epochs)
+    if args.epochs is not None:
+        search.fit(X_dev, y_dev, training_epochs=args.epochs)
+    else:
+        search.fit(X_dev, y_dev)
 
     print(f"Best params: {search.best_params_}")
 
-    model = (
-        evaluation_module.get_estimator()
-        .set_params(**search.best_params_)
-        .fit(X_dev, y_dev, training_epochs=5)
-    )
+    model = evaluation_module.get_estimator().set_params(**search.best_params_)
+
+    if args.eval_epochs is not None:
+        model.fit(X_dev, y_dev, training_epochs=args.eval_epochs)
+    else:
+        model.fit(X_dev, y_dev)
+
     mse = mean_squared_error(y_true=y_eval, y_pred=model.predict(X_eval))
     print(f"Eval MSE: {mse}")
 
@@ -171,6 +181,11 @@ def handle_model_evaluation(
         **evaluation_module.get_eval_params()
     )
 
+    if args.epochs is not None:
+        fit_params = {"training_epochs": args.epochs}
+    else:
+        fit_params = None
+
     cv_results = cross_validate(
         estimator=estimator,
         X=X,
@@ -180,7 +195,7 @@ def handle_model_evaluation(
         n_jobs=args.jobs,
         pre_dispatch="n_jobs",
         verbose=10,
-        fit_params={"training_epochs": args.epochs},
+        fit_params=fit_params,
     )
 
     print(f"Neg MSE: {cv_results['test_neg_mean_squared_error']}")
