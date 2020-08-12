@@ -81,7 +81,11 @@ def parse_command_line() -> argparse.Namespace:
     )
     parser.add_argument("--epochs", type=int, default=1, help="NN training epochs.")
     parser.add_argument(
-        "--jobs", type=int, default=1, help="Number of jobs to run in parallel."
+        "--jobs",
+        type=int,
+        default=1,
+        help="Number of jobs to run in parallel. "
+        "Specify -1 to use all available CPUs.",
     )
     parser.add_argument(
         "--folds", type=int, default=3, help="Number of folds for cross-validation"
@@ -137,7 +141,7 @@ def handle_model_selection(
         n_iter=args.iterations,
         scoring="neg_mean_squared_error",
         n_jobs=args.jobs,
-        pre_dispatch=args.jobs,
+        pre_dispatch="n_jobs",
         cv=args.folds,
         refit=False,
         verbose=10,
@@ -174,7 +178,7 @@ def handle_model_evaluation(
         scoring=("neg_mean_squared_error", "r2"),
         cv=args.folds,
         n_jobs=args.jobs,
-        pre_dispatch=args.jobs,
+        pre_dispatch="n_jobs",
         verbose=10,
         fit_params={"training_epochs": args.epochs},
     )
