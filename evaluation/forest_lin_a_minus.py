@@ -1,7 +1,8 @@
 #!/usr/bin/env python3.7
 # -*- coding: utf-8 -*-
 """
-Model selection/evaluation parameters for the random forest.
+Model selection/evaluation parameters for the random forest,
+using the A- linear model features.
 """
 
 from typing import Any, Dict, Sequence
@@ -9,10 +10,10 @@ from typing import Any, Dict, Sequence
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
-
 from sklearn.ensemble import RandomForestRegressor
-from preprocessing import one_hot_encode_sequences
+
 from linear_regression import Model
+from preprocessing import read_sequence_ids
 
 
 def get_estimator() -> BaseEstimator:
@@ -27,10 +28,10 @@ def get_param_distributions() -> Dict[str, Sequence[Any]]:
     Returns a dict of parameter distributions for use with RandomizedSearchCV.
     """
     return {
-        # n_estimators=100, random_state = None, bootstrap = True, max_depth = 70, min_samples_leaf = 10
         "n_estimators": range(40, 120),
         "max_depth": range(50, 100),
-        "min_samples_leaf": range(20, 5),
+        "min_samples_leaf": range(5, 20),
+        "bootstrap": (True,),
     }
 
 
@@ -42,7 +43,6 @@ def get_eval_params() -> Dict[str, Any]:
         "n_estimators": 80,
         "max_depth": 60,
         "min_samples_leaf": 15,
-        "random_state": None,
         "bootstrap": True,
     }
 
@@ -52,11 +52,22 @@ def preprocess_data(df: pd.DataFrame) -> np.ndarray:
     Given a DataFrame returned by preprocessing.read_all_data, returns a tensor for use
     as input to the sklearn estimator.
     """
-    model_a_plus = Model.load("data/run_linear_3U_40A_dg_BEST.out.mat")
-    model_a_minus = Model.load("data/run_linear_3U_00Am1_dg_BEST.out.mat")
+    # The DataFrame we were given contains truncated sequences,
+    # but we need the full ones
+    complete_sequences = read_sequence_ids("data/3U_sequences_final.txt")
+    complete_sequences.set_index("id", inplace=True)
 
-    kmer_cnt_matrix_a_plus = model_a_plus.kmer_cnt_matrix(df["sequence"])
-    kmer_cnt_matrix_a_minus = model_a_minus.kmer_cnt_matrix(df["sequence"])
+    assert frozenset(df.index).issubset(frozenset(complete_sequences.index))
 
-    # Add chosing between a_plus or a_minus to send out.
-    return kmer_cnt_matrix_a_plus
+    # Drop sequences that are not present in the given DataFrame
+    complete_sequences.drop(
+        index=complete_sequences.index.difference(df.index), inplace=True
+    )
+
+    # Make sure both DFs are in the same order
+    complete_sequences = complete_sequences.reindex(index=df.index)
+
+    assert (complete_sequences.index == df.index).all()
+
+    linear_model = Model.load("data/run_linear_3U_00Am1_dg_BEST.out.mat")
+    return linear_model.kmer_count_matrix(complete_sequences["sequence"])

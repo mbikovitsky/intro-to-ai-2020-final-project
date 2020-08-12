@@ -19,20 +19,25 @@ class Model(NamedTuple):
     intercept: np.float
     kmers: List[str]
 
-    def kmer_cnt_matrix(self, sequences: pd.Series):
+    def kmer_count_matrix(self, sequences: pd.Series) -> np.ndarray:
+        """
+        Count the occurrences of each feature k-mer of this model in the
+        given series of genetic sequences.
+        """
         X = np.zeros((len(sequences), len(self.coefficients)), dtype=int)
 
         # Count the occurrences of each feature k-mer in each of the sequences
         # we are predicting.
         for column, kmer in enumerate(self.kmers):
             X[:, column] = occurrences(sequences, kmer)
+
         return X
 
     def predict(self, sequences: pd.Series) -> np.ndarray:
         """
         Predicts degradation rates for a series of RNA sequences.
         """
-        X = self.kmer_cnt_matrix(sequences)
+        X = self.kmer_count_matrix(sequences)
         prediction = X @ self.coefficients + self.intercept
 
         return prediction
