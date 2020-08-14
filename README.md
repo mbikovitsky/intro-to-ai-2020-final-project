@@ -1,7 +1,7 @@
-# mRNA Degradation Deep Learning
+# mRNA Degradation Rate Deep Learning Predictor
 
 This is the supporting code for the mRNA degradation rate deep learning
-prediction project.
+predictor project.
 
 
 ## Contents
